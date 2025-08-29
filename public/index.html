@@ -5,189 +5,115 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>FREE YOUR MIND — Matrix Text RPG</title>
 <style>
-  :root{
-    --green:#32ff6a; --cyan:#39d2ff; --ink:#07b319; --light:#e8fff3;
-    --bg:#000; --panel:rgba(0,0,0,.65);
-  }
+  :root{--green:#32ff6a;--cyan:#39d2ff;--ink:#07b319;--light:#e8fff3;--panel:rgba(0,0,0,.65)}
   html,body{height:100%}
-  body{margin:0;background:#000;color:#aefccf;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;overflow:hidden}
-
-  /* Hidden kill-switch for overlays */
+  body{margin:0;background:#000;color:#aefccf;font-family:ui-monospace,monospace;overflow:hidden}
   [hidden]{display:none!important}
 
-  #rain{position:fixed;inset:0;z-index:0;opacity:.42}
-  #app{position:relative;z-index:1}
+  /* Overlay */
+  .home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(0,0,0,.85);z-index:2}
+  .title{font-size:46px;color:#baffec;margin:.2rem 0 .6rem}
+  .subtitle{opacity:.85;margin-bottom:.8rem}
+  .pillRow{display:flex;gap:1.5rem;margin-top:.6rem}
+  .pill{width:64px;height:64px;border-radius:999px;border:2px solid #0f0;cursor:pointer;
+        box-shadow:0 0 18px rgba(0,255,150,.35), inset 0 0 10px rgba(0,255,150,.25)}
+  .pill:hover{transform:translateY(-1px)}
+  .red{border-color:#c31010;background:radial-gradient(circle at 30% 30%,rgba(255,32,32,.6),rgba(0,0,0,.25))}
+  .blue{border-color:#0570d4;background:radial-gradient(circle at 30% 30%,rgba(64,160,255,.6),rgba(0,0,0,.25))}
+  .quote{margin-top:1rem;color:#9ff;max-width:820px;font-size:14px;line-height:1.35}
 
-  /* HUD */
-  .hud{position:fixed;right:.8rem;top:.6rem;background:var(--panel);border:1px solid var(--green);
-       padding:.4rem .6rem; font-size:.85rem; color:#baffec; z-index:2}
-  .hud b{color:var(--green)}
-
-  /* Home overlay */
-  .home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.8))}
-  .title{font-size:46px;letter-spacing:.08em;margin:.2rem 0 .6rem 0;color:#baffec}
-  .subtitle{opacity:.85;margin:.25rem 0 1.2rem}
-  .pillRow{display:flex;gap:1rem;margin-top:.6rem;justify-content:center}
-
-  /* BLANK, CLICKABLE PILLS (no text) */
-  .pill{width:60px;height:60px;border-radius:999px;border:2px solid var(--green);
-        background:radial-gradient(circle at 30% 30%, rgba(0,255,150,.6), rgba(0,0,0,.25));
-        box-shadow:0 0 18px rgba(0,255,150,.35), inset 0 0 10px rgba(0,255,150,.3);
-        transition:transform .08s, box-shadow .08s; cursor:pointer; display:inline-block}
-  .pill:hover{transform:translateY(-1px); box-shadow:0 0 26px rgba(0,255,150,.55), inset 0 0 14px rgba(0,255,150,.4)}
-  .red{border-color:#c31010; background:radial-gradient(circle at 30% 30%, rgba(255,32,32,.6), rgba(0,0,0,.25)); box-shadow:0 0 18px rgba(255,32,32,.35), inset 0 0 10px rgba(255,32,32,.3)}
-  .red:hover{box-shadow:0 0 26px rgba(255,32,32,.55), inset 0 0 14px rgba(255,32,32,.4)}
-  .blue{border-color:#0570d4; background:radial-gradient(circle at 30% 30%, rgba(64,160,255,.6), rgba(0,0,0,.25)); box-shadow:0 0 18px rgba(64,160,255,.35), inset 0 0 10px rgba(64,160,255,.3)}
-  .blue:hover{box-shadow:0 0 26px rgba(64,160,255,.55), inset 0 0 14px rgba(64,160,255,.4)}
-
-  .quote{margin-top:1.1rem;color:#9ff;max-width:820px;font-size:14px;line-height:1.35}
-
-  /* Terminal */
-  .log{position:fixed;left:5%;right:5%;bottom:5.8rem;height:52vh;max-width:980px;margin-inline:auto;background:var(--panel);border:1px solid var(--green);padding:.8rem;overflow:auto;white-space:pre-wrap}
+  /* Terminal + input */
+  .log{position:fixed;left:5%;right:5%;bottom:5.8rem;height:52vh;max-width:980px;margin-inline:auto;
+       background:var(--panel);border:1px solid var(--green);padding:.8rem;overflow:auto;white-space:pre-wrap;z-index:1}
   .inputDock{position:fixed;left:5%;right:5%;bottom:1.4rem;max-width:980px;margin-inline:auto;display:flex;gap:.6rem;z-index:1}
-  .text{flex:1; background:#000;border:1px solid var(--green);padding:.7rem .8rem;color:#caffef;border-radius:.45rem;font-size:16px}
+  .text{flex:1;background:#000;border:1px solid var(--green);padding:.7rem .8rem;color:#caffef;border-radius:.45rem;font-size:16px}
   .btn{background:var(--ink);border:1px solid var(--green);color:#e8fffe;padding:.65rem 1rem;border-radius:.45rem;cursor:pointer}
   .btn:disabled{opacity:.6;cursor:wait}
   .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
-  .tag{font-size:12px; border:1px dashed var(--cyan); color:#b8f6ff; padding:.15rem .4rem; border-radius:.4rem; cursor:pointer}
+  .tag{font-size:12px;border:1px dashed var(--cyan);color:#b8f6ff;padding:.15rem .4rem;border-radius:.4rem;cursor:pointer}
   .saveNote{position:fixed;left:50%;transform:translateX(-50%);bottom:.3rem;font-size:12px;color:#9ff;opacity:.75}
 </style>
 </head>
 <body>
-<canvas id="rain"></canvas>
-
-<div id="app">
-  <!-- HUD -->
-  <div class="hud" id="hud">
-    <div><b>Name:</b> <span id="pname">Neo</span> · <b>Lvl:</b> <span id="plvl">1</span></div>
-    <div><b>HP:</b> <span id="php">100</span> · <b>MP:</b> <span id="pmp">40</span> · <b>Credits:</b> <span id="pcr">0</span></div>
-    <div><b>Weapon:</b> <span id="pwpn">Fists</span></div>
+<!-- Overlay -->
+<div class="home" id="home">
+  <div class="title">FREE YOUR MIND</div>
+  <div class="subtitle">How far down the rabbit hole do you want to go?</div>
+  <div class="pillRow">
+    <!-- NO TEXT ON PILLS -->
+    <div class="pill red" id="red" aria-label="Red pill"></div>
+    <div class="pill blue" id="blue" aria-label="Blue pill"></div>
   </div>
-
-  <!-- Home -->
-  <div class="home" id="home">
-    <div class="title">FREE YOUR MIND</div>
-    <div class="subtitle">How far down the rabbit hole do you want to go?</div>
-
-    <!-- Blank pills; use aria-label for accessibility -->
-    <div class="pillRow">
-      <button class="pill red" id="red" aria-label="Red pill"></button>
-      <a class="pill blue" id="blue" aria-label="Blue pill" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener"></a>
-    </div>
-
-    <div class="quote">“You take the blue pill — the story ends… You take the red pill — you stay in Wonderland, and I show you how deep the rabbit hole goes.”</div>
-  </div>
-
-  <!-- Terminal -->
-  <div class="log" id="log" hidden></div>
-  <div class="inputDock" id="dock" hidden>
-    <input id="cmd" class="text" placeholder="Type anything. Enter to send…" autocomplete="off"/>
-    <button id="go" class="btn">Send</button>
-  </div>
-  <div class="saveNote" id="saveNote" hidden>Progress saved.</div>
+  <div class="quote">“You take the blue pill — the story ends… You take the red pill — you stay in Wonderland, and I show you how deep the rabbit hole goes.”</div>
 </div>
 
-<script>
-/* ===== Matrix Code Rain (background) ===== */
-const canvas = document.getElementById("rain");
-const ctx = canvas.getContext("2d");
-function size() { canvas.width = innerWidth; canvas.height = innerHeight; }
-addEventListener("resize", size); size();
-const glyphs = "アイウエオｱｲｳｴｵABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const font = 14, cols = () => Math.floor(canvas.width / font);
-let drops = [];
-function initDrops(){ drops = Array(cols()).fill(1); }
-initDrops(); addEventListener("resize", initDrops);
-setInterval(()=> {
-  ctx.fillStyle = "rgba(0,0,0,0.06)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#0f0"; ctx.font = font+"px monospace";
-  for (let i=0;i<drops.length;i++){
-    const ch = glyphs.charAt(Math.floor(Math.random()*glyphs.length));
-    ctx.fillText(ch, i*font, drops[i]*font);
-    if (drops[i]*font > canvas.height && Math.random() > .975) drops[i]=0;
-    drops[i]++;
-  }
-}, 33);
+<!-- Terminal -->
+<div class="log" id="log" hidden></div>
+<div class="inputDock" id="dock" hidden>
+  <input id="cmd" class="text" placeholder="Type anything. Enter to send…" autocomplete="off"/>
+  <button id="go" class="btn">Send</button>
+</div>
+<div class="saveNote" id="saveNote" hidden>Progress saved.</div>
 
-/* ===== Game State & Memory (client) ===== */
+<script>
+/* ===== UI refs ===== */
 const ui = {
   home: document.getElementById("home"),
+  red: document.getElementById("red"),
+  blue: document.getElementById("blue"),
   log: document.getElementById("log"),
   dock: document.getElementById("dock"),
   cmd: document.getElementById("cmd"),
   go: document.getElementById("go"),
   saveNote: document.getElementById("saveNote"),
-  hp: document.getElementById("php"),
-  mp: document.getElementById("pmp"),
-  cr: document.getElementById("pcr"),
-  lv: document.getElementById("plvl"),
-  wpn: document.getElementById("pwpn"),
-  name: document.getElementById("pname"),
-  red: document.getElementById("red"),
-  blue: document.getElementById("blue")
 };
 
-const KEY = "fym_v1";
-const save = (obj)=>localStorage.setItem(KEY, JSON.stringify(obj));
-const load = ()=>{ try {return JSON.parse(localStorage.getItem(KEY))||null;} catch {return null;} };
-
+/* ===== Save / Memory ===== */
+const KEY = "fym_open_world_v1";
+const save = (o)=>localStorage.setItem(KEY, JSON.stringify(o));
+const load = ()=>{try{return JSON.parse(localStorage.getItem(KEY))||null}catch{return null}};
 const store = load() || {
   state: { name:"Neo", level:1, hp:100, mp:40, credits:0, weapon:"Fists", location:"apartment", flags:{} },
   memory: { facts:[], goals:[], npcs:{}, prefs:{} },
   log: []
 };
-renderHud();
-
-function renderHud(){
-  ui.name.textContent = store.state.name;
-  ui.lv.textContent = store.state.level;
-  ui.hp.textContent = store.state.hp;
-  ui.mp.textContent = store.state.mp;
-  ui.cr.textContent = store.state.credits;
-  ui.wpn.textContent = store.state.weapon;
-}
+function pushLog(line){ store.log.push(line); if(store.log.length>50) store.log.shift(); save(store); }
 function append(s){ ui.log.innerHTML += s + "\n"; ui.log.scrollTop = ui.log.scrollHeight; }
 
-/* ===== Start ===== */
+/* ===== Start / Pills ===== */
 function startGame(){
-  ui.home.setAttribute("hidden","");
-  ui.log.removeAttribute("hidden");
-  ui.dock.removeAttribute("hidden");
+  ui.home.hidden = true;
+  ui.log.hidden = false;
+  ui.dock.hidden = false;
   ui.cmd.focus();
-  if (store.log.length === 0) {
-    append("Wake up, Neo… The Matrix has you.\nType anything to act. Try: answer phone, hide, run, market, scan, overclock, item Health Pack.\n");
+  if (store.log.length===0){
+    append("Wake up, Neo… The Matrix has you.\nType anything. (ex: answer phone, hide, run, scan, hack, overclock, or just describe what you do.)");
   } else {
-    append("Session restored. Continue your story.\n");
-    store.log.forEach(line => append(line));
+    append("Session restored. Continue your story.");
+    store.log.forEach(line=>append(line));
   }
 }
-
 ui.red.addEventListener("click", startGame);
+ui.blue.addEventListener("click", ()=> window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank", "noopener"));
 
-// Allow Enter/Space to start when overlay is visible
-document.addEventListener("keydown", (e)=>{
-  if (!ui.home.hasAttribute("hidden") && (e.key === "Enter" || e.key === " ")) {
-    startGame();
-  }
+/* Allow Enter/Space to start when overlay visible */
+document.addEventListener("keydown",(e)=>{
+  if(!ui.home.hidden && (e.key==="Enter"||e.key===" ")) startGame();
 });
 
-/* ===== Client → AI ===== */
-function pushLog(line) { store.log.push(line); if (store.log.length > 40) store.log.shift(); save(store); }
-
-async function submit(input) {
+/* ===== Client → Serverless AI ===== */
+async function submit(input){
   input = input.trim();
-  if (!input) return;
+  if(!input) return;
   append("> " + input); pushLog("> " + input);
-
-  if (input.toLowerCase() === "save") { save(store); flashSave(); return; }
-  if (input.toLowerCase() === "reset") { localStorage.removeItem(KEY); location.reload(); return; }
-  if (input.toLowerCase() === "help") { append("Try verbs like: answer, scan, hide, jump, run, talk, hack, overclock, defend, market, or just describe what you do."); return; }
+  if (input.toLowerCase()==="save"){ flashSave(); return; }
+  if (input.toLowerCase()==="reset"){ localStorage.removeItem(KEY); location.reload(); return; }
 
   ui.go.disabled = true;
-  try {
+  try{
     const res = await fetch("/api/ai", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         playerInput: input,
         state: store.state,
@@ -197,52 +123,66 @@ async function submit(input) {
     });
     const data = await res.json();
 
-    if (data.effects) {
+    // Fallback guards
+    if (!data || typeof data !== "object") throw new Error("Bad AI response");
+    const narration = data.narration || "The signal flickers but you still sense possibility.";
+    append(narration); pushLog(narration);
+
+    if (data.effects){
       if (Number.isFinite(data.effects.hpDelta)) store.state.hp += data.effects.hpDelta;
       if (Number.isFinite(data.effects.mpDelta)) store.state.mp += data.effects.mpDelta;
       if (Number.isFinite(data.effects.creditsDelta)) store.state.credits += data.effects.creditsDelta;
     }
-    if (data.state_patch) Object.assign(store.state, data.state_patch);
-    if (data.memory_patch) deepMerge(store.memory, data.memory_patch);
-    renderHud();
+    if (data.state_patch && typeof data.state_patch === "object"){
+      Object.assign(store.state, data.state_patch);
+    }
+    if (data.memory_patch && typeof data.memory_patch === "object"){
+      deepMerge(store.memory, data.memory_patch);
+    }
 
-    const narration = data.narration || "Static hums. Your move still matters.";
-    append(narration); pushLog(narration);
-
-    if (Array.isArray(data.actions) && data.actions.length) {
-      const row = document.createElement("div"); row.className = "actions";
+    if (Array.isArray(data.actions) && data.actions.length){
+      const row = document.createElement("div");
+      row.className = "actions";
       data.actions.slice(0,6).forEach(a=>{
-        const span = document.createElement("span"); span.className="tag";
-        span.textContent = a.label || a.cmd || "";
-        span.addEventListener("click", ()=>{ ui.cmd.value = a.cmd || a.label; ui.cmd.focus(); });
-        row.appendChild(span);
+        const el = document.createElement("span");
+        el.className = "tag";
+        el.textContent = a.label || a.cmd || "";
+        el.addEventListener("click", ()=>{
+          ui.cmd.value = a.cmd || a.label || "";
+          ui.cmd.focus();
+        });
+        row.appendChild(el);
       });
       ui.log.appendChild(row); ui.log.scrollTop = ui.log.scrollHeight;
-      pushLog("(actions updated)");
+      pushLog("(actions presented)");
     }
+
     save(store);
-  } catch (e) {
-    console.error(e);
-    append("Connection crackles. Try again, or use verbs like scan / hide / run / answer. (We won’t stall.)");
-  } finally {
+  }catch(err){
+    console.error(err);
+    const safe = "Noise scrambles the line, but you can still act. Try anything — the world adapts.";
+    append(safe); pushLog(safe);
+  }finally{
     ui.go.disabled = false;
   }
 }
 
-ui.go.addEventListener("click", ()=>{ const v = ui.cmd.value; ui.cmd.value=""; submit(v); });
-ui.cmd.addEventListener("keydown", e=>{ if (e.key === "Enter") { const v = ui.cmd.value; ui.cmd.value=""; submit(v); } });
+ui.go.addEventListener("click", ()=>{ const v=ui.cmd.value; ui.cmd.value=""; submit(v); });
+ui.cmd.addEventListener("keydown", e=>{ if(e.key==="Enter"){ const v=ui.cmd.value; ui.cmd.value=""; submit(v);} });
 
 function deepMerge(target, patch){
-  if (!patch || typeof patch !== "object") return;
-  for (const k of Object.keys(patch)) {
+  if (!patch || typeof patch!=='object') return;
+  for (const k of Object.keys(patch)){
     const pv = patch[k];
-    if (pv && typeof pv === "object" && !Array.isArray(pv)) {
-      if (!target[k] || typeof target[k] !== "object") target[k] = {};
+    if (pv && typeof pv==='object' && !Array.isArray(pv)){
+      if (!target[k] || typeof target[k]!=='object') target[k]={};
       deepMerge(target[k], pv);
-    } else { target[k] = pv; }
+    } else {
+      target[k]=pv;
+    }
   }
 }
-function flashSave(){ const n = document.getElementById("saveNote"); n.removeAttribute("hidden"); setTimeout(()=>n.setAttribute("hidden",""), 1200); }
+function flashSave(){ ui.saveNote.hidden=false; setTimeout(()=>ui.saveNote.hidden=true, 1200); }
 </script>
 </body>
 </html>
