@@ -1,54 +1,66 @@
-export default async function handler(req, res) {
+// api/ai.js — Vercel serverless function (Node 18+)
+export default async (req, res) => {
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-    const { state = {}, playerInput = "", logTail = "" } = body;
+    const { state, playerInput } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
-    const prompt = `
-You are the adaptive DM for a Matrix text RPG.
-Player input: "${playerInput}"
-State: ${JSON.stringify(state)}
-Recent log:
-${logTail}
-
-Return STRICT JSON ONLY:
-{
-  "narration": "2–5 sentences, cinematic Matrix tone.",
-  "actions": [
-    {"type":"spawnEncounter"},
-    {"type":"awardCredits","args":{"amount":10}},
-    {"type":"offerShop"},
-    {"type":"setScene","args":{"name":"construct"}},
-    {"type":"savePortal"},
-    {"type":"gameOver"},
-    {"type":"noOp"}
-  ]
-}
+    const system = `
+You are MORPHEUS/DM for a Matrix text RPG. Rules:
+- Output STRICT JSON: {"narration":"...","actions":[...]}
+- "actions" ⊆ ["spawnEncounter","awardCredits","offerShop","setScene","savePortal","gameOver","noOp"]
+- Stay in-world. Keep replies short (<= 60 words unless boss moment).
 `;
 
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    const tools = [{
+      type: "function",
+      function: {
+        name: "engine",
+        description: "Select engine actions to mutate game state.",
+        parameters: {
+          type: "object",
+          properties: {
+            actions: {
+              type: "array",
+              items: { type: "string", enum:
+                ["spawnEncounter","awardCredits","offerShop","setScene","savePortal","gameOver","noOp"]
+              }
+            }
+          },
+          required: ["actions"]
+        }
+      }
+    }];
+
+    const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.8,
+        model: "gpt-5-mini",      // good balance of cost/quality; you can change later
         messages: [
-          { role: "system", content: "You are a cinematic Matrix RPG DM. JSON only." },
-          { role: "user", content: prompt }
-        ]
+          { role: "system", content: system },
+          { role: "user", content: [
+              { type: "text", text: `GAME_STATE:\n${JSON.stringify(state)}` },
+              { type: "text", text: `PLAYER_INPUT:\n${playerInput}` }
+            ] }
+        ],
+        tools,
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        stream: false
       })
     });
 
     const data = await r.json();
-    let text = data?.choices?.[0]?.message?.content || "";
-    let out;
-    try { out = JSON.parse(text); }
-    catch { out = { narration: text || "…", actions: [{ type: "noOp" }] }; }
+    const tool = data?.output?.[0]?.content?.find?.(c => c.type === "tool")?.tool_call;
+    const textObj = data?.output?.[0]?.content?.find?.(c => c.type === "output_text");
+    const payload = tool ? tool.arguments
+      : (textObj ? JSON.parse(textObj.text) : { narration: "…", actions: ["noOp"] });
 
-    res.status(200).json(out);
-  } catch (err) {
-    res.status(500).json({ error: err.message || String(err) });
+    res.setHeader("Content-Type", "application/json");
+    res.status(200).send(payload);
+  } catch (e) {
+    res.status(500).send({ error: e.message });
   }
-}
+};
