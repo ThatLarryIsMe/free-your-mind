@@ -25,14 +25,22 @@
 
   /* Home overlay */
   .home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.8))}
-  .title{font-size:46px;letter-spacing:.08em;margin:.2rem 0 .25rem 0;color:#baffec}
-  .subtitle{opacity:.85;margin:.25rem 0 .9rem}
-  .pillRow{display:flex;gap:.6rem;margin-top:.4rem;justify-content:center}
-  .pill{width:140px;height:44px;border-radius:28px;border:2px solid var(--green);box-shadow:0 0 20px rgba(0,255,150,.35);transition:.08s transform, box-shadow .08s;cursor:pointer;background:#001a10;color:#baffec}
-  .pill:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(0,255,150,.55)}
-  .red{border-color:#c31010;color:#ffd9d9}
-  .blue{border-color:#0570d4;color:#b0d8ff}
-  .quote{margin-top:1rem;color:#9ff;max-width:820px;font-size:14px}
+  .title{font-size:46px;letter-spacing:.08em;margin:.2rem 0 .6rem 0;color:#baffec}
+  .subtitle{opacity:.85;margin:.25rem 0 1.2rem}
+  .pillRow{display:flex;gap:1rem;margin-top:.6rem;justify-content:center}
+
+  /* BLANK, CLICKABLE PILLS (no text) */
+  .pill{width:60px;height:60px;border-radius:999px;border:2px solid var(--green);
+        background:radial-gradient(circle at 30% 30%, rgba(0,255,150,.6), rgba(0,0,0,.25));
+        box-shadow:0 0 18px rgba(0,255,150,.35), inset 0 0 10px rgba(0,255,150,.3);
+        transition:transform .08s, box-shadow .08s; cursor:pointer; display:inline-block}
+  .pill:hover{transform:translateY(-1px); box-shadow:0 0 26px rgba(0,255,150,.55), inset 0 0 14px rgba(0,255,150,.4)}
+  .red{border-color:#c31010; background:radial-gradient(circle at 30% 30%, rgba(255,32,32,.6), rgba(0,0,0,.25)); box-shadow:0 0 18px rgba(255,32,32,.35), inset 0 0 10px rgba(255,32,32,.3)}
+  .red:hover{box-shadow:0 0 26px rgba(255,32,32,.55), inset 0 0 14px rgba(255,32,32,.4)}
+  .blue{border-color:#0570d4; background:radial-gradient(circle at 30% 30%, rgba(64,160,255,.6), rgba(0,0,0,.25)); box-shadow:0 0 18px rgba(64,160,255,.35), inset 0 0 10px rgba(64,160,255,.3)}
+  .blue:hover{box-shadow:0 0 26px rgba(64,160,255,.55), inset 0 0 14px rgba(64,160,255,.4)}
+
+  .quote{margin-top:1.1rem;color:#9ff;max-width:820px;font-size:14px;line-height:1.35}
 
   /* Terminal */
   .log{position:fixed;left:5%;right:5%;bottom:5.8rem;height:52vh;max-width:980px;margin-inline:auto;background:var(--panel);border:1px solid var(--green);padding:.8rem;overflow:auto;white-space:pre-wrap}
@@ -40,7 +48,6 @@
   .text{flex:1; background:#000;border:1px solid var(--green);padding:.7rem .8rem;color:#caffef;border-radius:.45rem;font-size:16px}
   .btn{background:var(--ink);border:1px solid var(--green);color:#e8fffe;padding:.65rem 1rem;border-radius:.45rem;cursor:pointer}
   .btn:disabled{opacity:.6;cursor:wait}
-  .help{font-size:12px;opacity:.7;margin-top:.35rem;text-align:center}
   .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
   .tag{font-size:12px; border:1px dashed var(--cyan); color:#b8f6ff; padding:.15rem .4rem; border-radius:.4rem; cursor:pointer}
   .saveNote{position:fixed;left:50%;transform:translateX(-50%);bottom:.3rem;font-size:12px;color:#9ff;opacity:.75}
@@ -61,12 +68,14 @@
   <div class="home" id="home">
     <div class="title">FREE YOUR MIND</div>
     <div class="subtitle">How far down the rabbit hole do you want to go?</div>
+
+    <!-- Blank pills; use aria-label for accessibility -->
     <div class="pillRow">
-      <button class="pill red" id="red">Red Pill</button>
-      <a class="pill blue" id="blue" target="_blank" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" rel="noopener">Blue Pill</a>
+      <button class="pill red" id="red" aria-label="Red pill"></button>
+      <a class="pill blue" id="blue" aria-label="Blue pill" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener"></a>
     </div>
+
     <div class="quote">“You take the blue pill — the story ends… You take the red pill — you stay in Wonderland, and I show you how deep the rabbit hole goes.”</div>
-    <div class="help">Open the <b>Instructions</b> in the log after starting: try <code>answer phone</code>, <code>hide</code>, <code>run</code>, <code>market</code>, and in fights use <code>attack</code>, <code>hack</code>, <code>defend</code>, <code>focus</code>, <code>scan</code>, <code>overclock</code>, or items like <code>item Health Pack</code>.<br/>You can also type literally anything. The engine adapts and remembers.</div>
   </div>
 
   <!-- Terminal -->
@@ -140,7 +149,7 @@ function renderHud(){
 function append(s){ ui.log.innerHTML += s + "\n"; ui.log.scrollTop = ui.log.scrollHeight; }
 
 /* ===== Start ===== */
-ui.red.addEventListener("click", ()=>{
+function startGame(){
   ui.home.setAttribute("hidden","");
   ui.log.removeAttribute("hidden");
   ui.dock.removeAttribute("hidden");
@@ -151,35 +160,29 @@ ui.red.addEventListener("click", ()=>{
     append("Session restored. Continue your story.\n");
     store.log.forEach(line => append(line));
   }
-});
+}
 
+ui.red.addEventListener("click", startGame);
+
+// Allow Enter/Space to start when overlay is visible
 document.addEventListener("keydown", (e)=>{
   if (!ui.home.hasAttribute("hidden") && (e.key === "Enter" || e.key === " ")) {
-    ui.red.click();
+    startGame();
   }
 });
 
-function pushLog(line) {
-  store.log.push(line);
-  if (store.log.length > 40) store.log.shift();
-  save(store);
-}
+/* ===== Client → AI ===== */
+function pushLog(line) { store.log.push(line); if (store.log.length > 40) store.log.shift(); save(store); }
 
 async function submit(input) {
   input = input.trim();
   if (!input) return;
-  append("> " + input);
-  pushLog("> " + input);
+  append("> " + input); pushLog("> " + input);
 
-  // local commands (instant)
   if (input.toLowerCase() === "save") { save(store); flashSave(); return; }
   if (input.toLowerCase() === "reset") { localStorage.removeItem(KEY); location.reload(); return; }
-  if (input.toLowerCase() === "help") {
-    append("Try verbs like: answer, scan, hide, jump, run, talk, hack, overclock, defend, market, or just describe what you do. The engine adapts and remembers.");
-    return;
-  }
+  if (input.toLowerCase() === "help") { append("Try verbs like: answer, scan, hide, jump, run, talk, hack, overclock, defend, market, or just describe what you do."); return; }
 
-  // call AI
   ui.go.disabled = true;
   try {
     const res = await fetch("/api/ai", {
@@ -194,7 +197,6 @@ async function submit(input) {
     });
     const data = await res.json();
 
-    // Merge patches safely
     if (data.effects) {
       if (Number.isFinite(data.effects.hpDelta)) store.state.hp += data.effects.hpDelta;
       if (Number.isFinite(data.effects.mpDelta)) store.state.mp += data.effects.mpDelta;
@@ -205,10 +207,8 @@ async function submit(input) {
     renderHud();
 
     const narration = data.narration || "Static hums. Your move still matters.";
-    append(narration);
-    pushLog(narration);
+    append(narration); pushLog(narration);
 
-    // show suggested actions as clickable tags
     if (Array.isArray(data.actions) && data.actions.length) {
       const row = document.createElement("div"); row.className = "actions";
       data.actions.slice(0,6).forEach(a=>{
@@ -220,7 +220,6 @@ async function submit(input) {
       ui.log.appendChild(row); ui.log.scrollTop = ui.log.scrollHeight;
       pushLog("(actions updated)");
     }
-
     save(store);
   } catch (e) {
     console.error(e);
@@ -230,12 +229,8 @@ async function submit(input) {
   }
 }
 
-ui.go.addEventListener("click", ()=>{
-  const v = ui.cmd.value; ui.cmd.value = ""; submit(v);
-});
-ui.cmd.addEventListener("keydown", e=>{
-  if (e.key === "Enter") { const v = ui.cmd.value; ui.cmd.value=""; submit(v); }
-});
+ui.go.addEventListener("click", ()=>{ const v = ui.cmd.value; ui.cmd.value=""; submit(v); });
+ui.cmd.addEventListener("keydown", e=>{ if (e.key === "Enter") { const v = ui.cmd.value; ui.cmd.value=""; submit(v); } });
 
 function deepMerge(target, patch){
   if (!patch || typeof patch !== "object") return;
@@ -244,16 +239,10 @@ function deepMerge(target, patch){
     if (pv && typeof pv === "object" && !Array.isArray(pv)) {
       if (!target[k] || typeof target[k] !== "object") target[k] = {};
       deepMerge(target[k], pv);
-    } else {
-      target[k] = pv;
-    }
+    } else { target[k] = pv; }
   }
 }
-function flashSave(){
-  ui.saveNote.removeAttribute("hidden");
-  setTimeout(()=>ui.saveNote.setAttribute("hidden",""), 1200);
-}
+function flashSave(){ const n = document.getElementById("saveNote"); n.removeAttribute("hidden"); setTimeout(()=>n.setAttribute("hidden",""), 1200); }
 </script>
 </body>
 </html>
-
